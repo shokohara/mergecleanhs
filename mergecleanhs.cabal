@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f0ccb8d819e5788307d8722c7e8b805f473ea59db907e8b151781a2448328830
+-- hash: 06618bcacbe3d182a143b9cf445a7aede43ba023fcae9e7ed664a694e20c0a0c
 
 name:           mergecleanhs
 version:        0.1.0.0
@@ -27,6 +27,8 @@ executable mergecleanhs
       src
   build-depends:
       base >=4.7 && <5
+    , bytestring
+    , path
     , string-conversions
     , typed-process
   default-language: Haskell2010
