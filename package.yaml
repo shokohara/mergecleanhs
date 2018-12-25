@@ -17,6 +17,8 @@ dependencies:
   - string-conversions
   - path
   - bytestring
+  - optparse-applicative
+  - interpolate
 
 executables:
   mergecleanhs:
