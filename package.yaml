@@ -19,6 +19,7 @@ dependencies:
   - bytestring
   - optparse-applicative
   - interpolate
+  - extra
 
 executables:
   mergecleanhs:
