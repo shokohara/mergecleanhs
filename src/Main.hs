@@ -36,26 +36,22 @@ trim :: String -> String
 trim = f . f
   where f = reverse . dropWhile isSpace
 
-findMd5sum :: a -> ProcessConfig () () ()
 findMd5sum x = shell [i|find #{x} | env LC_ALL=C sort | md5sum -b|]
 
 main :: IO ()
 main = do
   s <- execParser opts
   return ()
---   ifM (f s) (return ()) ((g s >>= (\a -> either putStrLn (\(s)-> fmap s (\(a,b)-> Sample a b)))) >>= print)
+  ifM (hasDiffMd5Sum s) (return ()) ((hasDiffDirectories s >>= (\a -> either putStrLn (\(s)-> fmap s (\(a,b)-> Sample a b)))) >>= print)
 
-h :: t Sample -> IO (t Bool)
-h as = forM as f
 
-g ::
-  (Control.Monad.IO.Class.MonadIO m,
-   exceptions-0.10.0:Control.Monad.Catch.MonadThrow m,
-   Data.String.IsString a) =>
-  Sample -> m (Either a ([Path Abs Dir], [Path Abs Dir]))
-g a = do
-  (_, o1, _) <- readProcess (shell [i|find #{sampleA a} -type d -maxdepth 1|])
-  (_, o2, _) <- readProcess (shell [i|find #{sampleB a} -type d -maxdepth 1|])
+h as = do
+  a <- hasDiffMd5Sum as
+  b <- if a then a
+
+hasDiffDirectories a = do
+  (o1, _) <- readProcess_ (shell [i|find #{sampleA a} -type d -maxdepth 1|])
+  (o2, _) <- readProcess_ (shell [i|find #{sampleB a} -type d -maxdepth 1|])
   if o1 == o2 then do
      a <- sequence $ parseAbsDir <$> (tail . lines . cs $ o1)
      b <- sequence $ parseAbsDir <$> (tail . lines . cs $ o2)
@@ -63,33 +59,24 @@ g a = do
    else
      return $ Left "diff find $a -type d -maxdepth 1" 
     
-f :: Sample -> IO Bool
-f a = do
-  (_, o0, _) <- readProcess . findMd5sum $ sampleA a
+hasDiffMd5Sum :: Sample -> IO Bool
+hasDiffMd5Sum a = do
+  (o0, _) <- readProcess_ . findMd5sum $ sampleA a
   print $ trim $ cs o0
-  (_, o1, _) <- readProcess . findMd5sum $ sampleB a
+  (o1, _) <- readProcess_ . findMd5sum $ sampleB a
   print $ trim $ cs o1
   if o0 == o1 then return True else f3 a
 
-f3 :: Sample -> IO Bool
-f3 a = do
-  (_, o2, _) <- readProcess (shell [i|find #{sampleA a} | wc -l |])
+hasDiffDirectoryCount :: Sample -> IO Bool
+hasDiffDirectoryCount a = do
+  (o1, _) <- readProcess_ (shell [i|find #{sampleA a} | wc -l |])
+  print $ trim $ cs o1
+  (o2, _) <- readProcess_ (shell [i|find #{sampleB a} | wc -l |])
   print $ trim $ cs o2
-  (_, o3, _) <- readProcess (shell [i|find #{sampleB a} | wc -l |])
-  print $ trim $ cs o3
-  return $ o2 == o3
+  return $ o1 == o2
   
 opts :: ParserInfo Sample
 opts = info (sample <**> helper)
       ( fullDesc
      <> progDesc "Print a greeting for TARGET"
      <> header "hello - a test for optparse-applicative" )
-
-f1 :: IO ()
-f1 = do
-  (out, err) <- readProcess_ "find $HOME/mnt -type d -name '.*'"
-  typedPaths <- sequence $ parseAbsDir <$> (lines . cs $ out)
-  forM_ typedPaths print
---  forM_ ((\a -> "cd " ++ show a) <$> typedPaths) runProcess
-  writeFile "$HOME/result.out" out
-  writeFile "$HOME/result.err" err
